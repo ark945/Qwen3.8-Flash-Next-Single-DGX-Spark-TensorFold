@@ -31,14 +31,14 @@ CONTAINER_NAME="${CONTAINER_NAME:-qwen38-flash-next-tf}"          # the server's
 # :latest, or :languages for the DRAFT_LANGUAGE image).
 GHCR_IMAGE="${GHCR_IMAGE:-ghcr.io/miaai-lab/qwen3.8-flash-next-single-dgx-spark-tensorfold}"
 
-SERVED_NAME="${SERVED_NAME:-Qwen3.8-Flash-Next}"   # the model id clients see in /v1/models and replies (tensorfold --name)
+SERVED_NAME="${SERVED_NAME:-huihui-qwen3.8-27b-abliterated}"   # the model id clients see in /v1/models and replies (tensorfold --name)
 HOST="${HOST:-0.0.0.0}"
-PORT="${PORT:-8888}"
+PORT="${PORT:-1234}"
 # Serving defaults (./start.sh arguments come after them and win). All streams share one memory pool (~103-104 GiB
 # budget on a 128 GB Spark, 75 GiB of it weights), so window x streams x KV bytes must fit: 4 streams x 262,144 tokens
 # at int8 KV is ~97.8 GiB, 5 streams ~102.6 GiB (~4.5 GiB a stream). Other fits: 3 streams bf16 at 262k, 6 streams
 # int4 at 262k, 8 streams int4 at ~250k (tight), 6 streams int8 at ~220k. int4 and bf16 KV change the output slightly.
-PARALLEL="${PARALLEL:-5}"          # requests decoded together (streams)
+PARALLEL="${PARALLEL:-3}"          # requests decoded together (streams)
 CONTEXT="${CONTEXT:-262144}"       # prompt + reply window per stream (the model's native maximum)
 KV_DTYPE="${KV_DTYPE:-int8}"       # bf16 | int8 | int4
 PLE_ON_SSD="${PLE_ON_SSD:-1}"      # 1: read the 29.8 GiB n-gram tables from SSD, leaving that RAM to the KV cache
@@ -55,18 +55,20 @@ VISION_MAX_IMAGES="${VISION_MAX_IMAGES-${TENSORFOLD_MAX_IMAGES:-50}}"
 # prose and ~4% on code, the best balance of both; 4/0.50, 3/0.30 and 7/0.75 matched it on prose but not on code.
 MTP_DRAFTS="${MTP_DRAFTS:-6}"
 MTP_CONFIDENCE="${MTP_CONFIDENCE:-0.60}"
-# Thinking mode (Qwen's recommended sampling): temperature 1.0, top_p 0.95, top_k 20. A request's own values win.
-# min_p 0.0, presence_penalty 0.0 and repetition_penalty 1.0 are what TensorFold always does (it has no such
-# settings: those values mean "off"). THINKING=0 serves without a think block by default; a request can still set
-# "chat_template_kwargs": {"enable_thinking": true|false}.
-TEMPERATURE="${TEMPERATURE:-1.0}"
-TOP_P="${TOP_P:-0.95}"
+# Thinking mode: THINKING=0 serves without a think block by default (--no-thinking).
+# When thinking is off, standard Qwen sampling: temperature 0.7, top_p 0.8.
+TEMPERATURE="${TEMPERATURE:-0.7}"
+TOP_P="${TOP_P:-0.8}"
 TOP_K="${TOP_K:-20}"
+<<<<<<< Updated upstream
 THINKING="${THINKING:-1}"
 # Reply length for a request that sets no max_tokens (or max_completion_tokens). TensorFold's own default, 4,096,
 # can end a thinking reply before it answers (finish_reason "length", no content or tool call). The value is clamped
 # to the room left in the stream's window and reserves no memory; a request's own max_tokens wins.
 MAX_TOKENS="${MAX_TOKENS:-32768}"
+=======
+THINKING="${THINKING:-0}"
+>>>>>>> Stashed changes
 # TensorFold switches (start.sh passes every TENSORFOLD_* variable into the container).
 # Prompt piece rows. Unset, TensorFold v0.6.1 picks 2,048 with vision and 4,096 without (while nothing decodes,
 # if memory allows). With the n-gram tables on SSD (PLE_ON_SSD=1) 4,096 measured 10-30% slower from 5k to 16k

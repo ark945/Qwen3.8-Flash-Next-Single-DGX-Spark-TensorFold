@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<title>TensorFold + Gateway 智慧台股量化與服務架構簡報</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap');
+
+@page {
+    size: 16in 9in;
+    margin: 0;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #0b0f19;
+    color: #e2e8f0;
+    font-family: 'Inter', 'Noto Sans TC', -apple-system, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.slide {
+    width: 16in;
+    height: 9in;
+    page-break-after: always;
+    position: relative;
+    padding: 0.65in 0.85in;
+    background: radial-gradient(circle at 15% 15%, #162033 0%, #0b0f19 80%);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* 裝飾性背景光斑 */
+.glow-cyan {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.07) 0%, rgba(0,0,0,0) 70%);
+    top: -150px;
+    right: -150px;
+    border-radius: 50%;
+    pointer-events: none;
+}
+.glow-purple {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.05) 0%, rgba(0,0,0,0) 70%);
+    bottom: -100px;
+    left: -100px;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* Header */
+.slide-header {
+    margin-bottom: 0.35in;
+}
+.tagline {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #38bdf8;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.tagline::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #38bdf8;
+    box-shadow: 0 0 10px #38bdf8;
+}
+.slide-title {
+    font-size: 38px;
+    font-weight: 800;
+    color: #f8fafc;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+}
+.slide-subtitle {
+    font-size: 17px;
+    color: #94a3b8;
+    margin-top: 6px;
+    font-weight: 400;
+}
+
+/* Footer */
+.slide-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #64748b;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 14px;
+}
+.footer-badge {
+    background: rgba(255,255,255,0.04);
+    padding: 3px 10px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.06);
+    color: #94a3b8;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Grid & Cards */
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.35in;
+    flex: 1;
+}
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.28in;
+    flex: 1;
+}
+.grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.24in;
+    flex: 1;
+}
+
+.card {
+    background: rgba(18, 26, 43, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+}
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+.card-title {
+    font-size: 19px;
+    font-weight: 700;
+    color: #f1f5f9;
+}
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+.badge-blue { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+.badge-green { background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
+.badge-purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+.badge-amber { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
+.badge-rose { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
+
+/* Typography inside cards */
+p, li {
+    font-size: 14px;
+    color: #cbd5e1;
+    line-height: 1.6;
+}
+ul {
+    list-style: none;
+}
+li {
+    position: relative;
+    padding-left: 18px;
+    margin-bottom: 8px;
+}
+li::before {
+    content: '▹';
+    position: absolute;
+    left: 0;
+    color: #38bdf8;
+    font-weight: bold;
+}
+li.green::before { color: #34d399; }
+li.amber::before { color: #fbbf24; }
+li.rose::before { color: #fb7185; }
+
+code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: rgba(0,0,0,0.35);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #38bdf8;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+
+.code-block {
+    background: #060911;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: #94a3b8;
+    line-height: 1.5;
+    margin-top: 10px;
+    overflow: hidden;
+}
+.code-hl { color: #38bdf8; font-weight: 600; }
+.code-str { color: #34d399; }
+.code-kw { color: #f43f5e; }
+
+/* Metrics */
+.metric-box {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+.metric-val {
+    font-size: 26px;
+    font-weight: 800;
+    color: #38bdf8;
+    font-family: 'JetBrains Mono', monospace;
+}
+.metric-lbl {
+    font-size: 11px;
+    color: #64748b;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+/* 封面特殊樣式 */
+.cover-slide {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 1.2in 1.2in;
+    background: radial-gradient(circle at 80% 20%, #1e293b 0%, #0b0f19 75%);
+}
+.cover-title {
+    font-size: 52px;
+    font-weight: 900;
+    line-height: 1.15;
+    background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 20px;
+}
+.cover-subtitle {
+    font-size: 22px;
+    color: #38bdf8;
+    font-weight: 500;
+    margin-bottom: 40px;
+    max-width: 900px;
+    line-height: 1.5;
+}
+.cover-meta {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+}
+.meta-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #cbd5e1;
+}
+
+/* Table Style */
+.table-custom {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    margin-top: 8px;
+}
+.table-custom th {
+    background: rgba(255, 255, 255, 0.04);
+    color: #94a3b8;
+    text-align: left;
+    padding: 8px 10px;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.table-custom td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: #cbd5e1;
+}
+.table-custom tr:hover td {
+    background: rgba(255,255,255,0.02);
+}
+</style>
+</head>
+<body>
+
+<!-- SLIDE 1: COVER -->
+<div class="slide cover-slide">
+    <div class="glow-cyan"></div>
+    <div class="glow-purple"></div>
+    <div class="tagline">Enterprise AI & Financial Quantitative Engineering</div>
+    <h1 class="cover-title">TensorFold + Gateway<br>智慧台股量化分析與聯網服務系統</h1>
+    <p class="cover-subtitle">DGX Spark 單機部署、本地 DuckDB 零拷貝極速分析、三層解耦微服務與維運實踐架構</p>
+    
+    <div class="cover-meta">
+        <div class="meta-chip">
+            <span style="color:#38bdf8;">⚡</span>
+            <span>模型核心: Qwen 3.8 Flash Next (27B)</span>
+        </div>
+        <div class="meta-chip">
+            <span style="color:#34d399;">📊</span>
+            <span>數據庫: DuckDB In-Memory + 8 大 Parquet 庫</span>
+        </div>
+        <div class="meta-chip">
+            <span style="color:#fbbf24;">🌐</span>
+            <span>通訊協定: OpenAI-Compatible Tool Calling</span>
+        </div>
+        <div class="meta-chip">
+            <span style="color:#c084fc;">📅</span>
+            <span>發布日期: 2026-10-02</span>
+        </div>
+    </div>
+
+    <div class="slide-footer" style="position: absolute; bottom: 0.65in; left: 1.2in; right: 1.2in; border: none;">
+        <span>Google DeepMind Antigravity Advanced Agentic Solution</span>
+        <span class="footer-badge">CONFIDENTIAL & INTERNAL USE ONLY</span>
+    </div>
+</div>
+
+<!-- SLIDE 2: ARCHITECTURE -->
+<div class="slide">
+    <div class="glow-cyan"></div>
+    <div class="slide-header">
+        <div class="tagline">System Topology</div>
+        <h2 class="slide-title">三層解耦微服務架構 (Tri-Tier Microservices)</h2>
+        <p class="slide-subtitle">將前端對話介面、智慧網關代理、數據運算引擎與大模型推論核心徹底解耦，兼具彈性與毫秒級響應。</p>
+    </div>
+
+    <div class="grid-3">
+        <!-- Tier 1 -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">第一層：SearXNG</span>
+                <span class="badge badge-green">Port 8080</span>
+            </div>
+            <p style="margin-bottom:12px; color:#94a3b8;">全開源隱私型聚合聯網搜尋引擎</p>
+            <ul>
+                <li>以 Docker 獨立容器常駐，無調用配額限制</li>
+                <li>啟用專屬 <code>JSON API</code> 格式輸出</li>
+                <li>主動提供財經即時新聞、重大公司訊息檢索</li>
+                <li>提供 Gateway 之 <code>web_search</code> 工具後端調用</li>
+            </ul>
+            <div class="metric-box">
+                <div>
+                    <div class="metric-lbl">響應速度</div>
+                    <div class="metric-val" style="color:#34d399;">~0.6s</div>
+                </div>
+                <div class="footer-badge">Docker Container</div>
+            </div>
+        </div>
+
+        <!-- Tier 2 -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">第二層：TensorFold Core</span>
+                <span class="badge badge-purple">Port 1235</span>
+            </div>
+            <p style="margin-bottom:12px; color:#94a3b8;">GPU 加速 Qwen 3.8 Flash Next 推論本體</p>
+            <ul>
+                <li>模型名稱: <code>huihui-qwen3.8-27b-abliterated</code></li>
+                <li>上下文深度: <code>262,144 tokens</code> (256K 超長窗口)</li>
+                <li>KV 快取最佳化: <code>int8</code> + <code>--ple-on-ssd</code></li>
+                <li>啟用 <code>MTP Drafts</code> 多推測投機解碼，極致吞吐</li>
+                <li>全域鎖定 <code>--no-thinking</code>，消除不必要延遲</li>
+            </ul>
+            <div class="metric-box">
+                <div>
+                    <div class="metric-lbl">推論解碼速率</div>
+                    <div class="metric-val" style="color:#c084fc;">40+ T/s</div>
+                </div>
+                <div class="footer-badge">DGX Spark CUDA</div>
+            </div>
+        </div>
+
+        <!-- Tier 3 -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">第三層：Smart Gateway</span>
+                <span class="badge badge-blue">Port 1234</span>
+            </div>
+            <p style="margin-bottom:12px; color:#94a3b8;">智慧量化分析反向代理與 Tool Calling 網關</p>
+            <ul>
+                <li>標準 OpenAI 相容介面 (<code>/v1/chat/completions</code>)</li>
+                <li>內嵌 <b>DuckDB 向量化查詢引擎</b>，零拷貝分析</li>
+                <li>後端自律代理循環 (Autonomous Agent Loop)</li>
+                <li>自動合成安全 SSE 串流，前端客戶端無感整合</li>
+                <li>防護限制：唯讀查詢安全過濾，杜絕高危險指令</li>
+            </ul>
+            <div class="metric-box">
+                <div>
+                    <div class="metric-lbl">客戶端連線埠</div>
+                    <div class="metric-val" style="color:#38bdf8;">1234</div>
+                </div>
+                <div class="footer-badge">Python + DuckDB</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-footer">
+        <span>TensorFold Enterprise Platform Architecture</span>
+        <span class="footer-badge">Slide 2 / 7</span>
+    </div>
+</div>
+
+<!-- SLIDE 3: DATA ASSETS -->
+<div class="slide">
+    <div class="glow-purple"></div>
+    <div class="slide-header">
+        <div class="tagline">Data Asset Matrix</div>
+        <h2 class="slide-title">本地台股 8 大核心量化數據庫在庫檢視</h2>
+        <p class="slide-subtitle">儲存於 <code>/home/blue/stock_data/</code>，採用標準 Apache Parquet 列式儲存，DuckDB 毫秒級掛載。</p>
+    </div>
+
+    <div class="grid-2">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">籌碼與衍生品數據集</span>
+                <span class="badge badge-amber">主力量化核心</span>
+            </div>
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th>數據集名稱</th>
+                        <th>檔案規格</th>
+                        <th>檔案數</th>
+                        <th>核心欄位 / 功能</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><b>券商分點日報</b><br><span style="color:#64748b;">broker_trade</span></td>
+                        <td><code>api_absr1_*.parquet</code><br><code>api_absr1_*.xlsx</code></td>
+                        <td><b style="color:#38bdf8;">85 個交易日檔</b><br>1 檔</td>
+                        <td>分點買賣超股數、均價；已關聯 935 筆券商中文名稱字典。</td>
+                    </tr>
+                    <tr>
+                        <td><b>融資融券與券資比</b><br><span style="color:#64748b;">margin</span></td>
+                        <td><code>api_margin_*.parquet</code></td>
+                        <td><b style="color:#38bdf8;">68 個交易日檔</b></td>
+                        <td>資券餘額、增減、券資比(<code>short_margin_ratio_pct</code>)、資券互抵。</td>
+                    </tr>
+                    <tr>
+                        <td><b>期貨多空部位</b><br><span style="color:#64748b;">taifex</span></td>
+                        <td><code>api_taifex_*.parquet</code></td>
+                        <td><b style="color:#38bdf8;">68 個交易日檔</b></td>
+                        <td>外資/投信/自營商台指期留倉、散戶小台多空比率(<code>retail_mtx_ratio_pct</code>)。</td>
+                    </tr>
+                    <tr>
+                        <td><b>庫藏股最新快照</b><br><span style="color:#64748b;">treasury_stock</span></td>
+                        <td><code>treasury_stocks_latest.parquet</code></td>
+                        <td><b style="color:#38bdf8;">即時快照</b></td>
+                        <td>全市場進行中與歷史庫藏股買回區間、預計/已買回股數、執行進度。</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">行情、股權與基本面數據集</span>
+                <span class="badge badge-green">長線與基本面</span>
+            </div>
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th>數據集名稱</th>
+                        <th>檔案規格</th>
+                        <th>檔案數</th>
+                        <th>核心欄位 / 功能</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><b>每日收盤行情</b><br><span style="color:#64748b;">close_price</span></td>
+                        <td><code>api_close1_*.parquet</code></td>
+                        <td><b style="color:#34d399;">74 個交易日檔</b></td>
+                        <td>開高低收、成交量值、漲跌幅；涵蓋上市與上櫃全市場標的。</td>
+                    </tr>
+                    <tr>
+                        <td><b>集保千張大戶</b><br><span style="color:#64748b;">tdcc</span></td>
+                        <td><code>api_tdcc_*.parquet</code></td>
+                        <td><b style="color:#34d399;">5 個週報檔</b></td>
+                        <td>每週五更新；千張大戶持股比例、人數與散戶持股比例變化。</td>
+                    </tr>
+                    <tr>
+                        <td><b>全市場月營收</b><br><span style="color:#64748b;">revenue</span></td>
+                        <td><code>api_revenue_????-??.parquet</code><br><code>api_revenue_all.parquet</code></td>
+                        <td><b style="color:#34d399;">93 個月份檔</b><br>1 檔</td>
+                        <td>自 2019-01 至今全歷史；當月營收、累計營收、MoM%、YoY%。(9月申報中)</td>
+                    </tr>
+                    <tr>
+                        <td><b>庫藏股每日時點檔</b><br><span style="color:#64748b;">treasury_history</span></td>
+                        <td><code>treasury_stocks_YYYYMMDD.parquet</code></td>
+                        <td><b style="color:#34d399;">每日時點</b></td>
+                        <td>回溯每日買回進度、比對公司護盤進場時點與庫藏股實際達成率。</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="slide-footer">
+        <span>All Datasets Verified & Mounted in In-Memory DuckDB Engine</span>
+        <span class="footer-badge">Slide 3 / 7</span>
+    </div>
+</div>
+
+<!-- SLIDE 4: TOOL CALLING ENGINE -->
+<div class="slide">
+    <div class="glow-cyan"></div>
+    <div class="slide-header">
+        <div class="tagline">Intelligent Agent Loop</div>
+        <h2 class="slide-title">Gateway 自律代理循環與工具調用規格</h2>
+        <p class="slide-subtitle">模型在後端自主決策調用 SQL 查詢或聯網搜尋，無需前端客戶端支援 Function Calling。</p>
+    </div>
+
+    <div class="grid-2">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">註冊工具定義 (Native Tool Definitions)</span>
+                <span class="badge badge-blue">OpenAI Function Schema</span>
+            </div>
+            <ul>
+                <li><b><code>query_stock_data</code></b>：執行 DuckDB SQL 查詢本地量化庫。
+                    <div class="code-block">
+                        <span class="code-kw">SELECT</span> symbol, name, close, volume <br>
+                        <span class="code-kw">FROM</span> close_price <br>
+                        <span class="code-kw">WHERE</span> symbol = <span class="code-str">'2330'</span> <br>
+                        <span class="code-kw">ORDER BY</span> trade_date <span class="code-kw">DESC LIMIT</span> 5;
+                    </div>
+                </li>
+                <li><b><code>get_stock_schema</code></b>：動態查詢 6 大資料表欄位定義與最新交易日。</li>
+                <li><b><code>web_search</code></b>：聯網調用 SearXNG 即時檢索新聞與事件背景。</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">自律代理執行流程 (Agent Execution Loop)</span>
+                <span class="badge badge-green">Server-Side Loop</span>
+            </div>
+            <ol style="margin-left: 20px; font-size: 13.5px; color: #cbd5e1; line-height: 1.8;">
+                <li><b>請求攔截</b>：接收客戶端請求，自動將台股資料庫現況與工具清單注入 System Prompt。</li>
+                <li><b>模型決策</b>：Qwen 3.8 評估問題，產生結構化 <code>tool_calls</code>（包含 SQL 語法與調用原因）。</li>
+                <li><b>本地秒級執行</b>：Gateway 執行 DuckDB 查詢（限制最多 100 筆與唯讀安全防護），並動態補齊券商中文分點名稱。</li>
+                <li><b>遞迴反饋</b>：將 <code>role: tool</code> 結果封裝，再次請求模型進行綜合量化解讀。</li>
+                <li><b>串流輸出</b>：將模型產出的最終量化報告以 SSE 流式格式傳回給前端（Cline / Chat UI）。</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="slide-footer">
+        <span>Zero-Copy Vectorized Query Execution Powered by DuckDB</span>
+        <span class="footer-badge">Slide 4 / 7</span>
+    </div>
+</div>
+
+<!-- SLIDE 5: TROUBLESHOOTING & FIXES -->
+<div class="slide">
+    <div class="glow-purple"></div>
+    <div class="slide-header">
+        <div class="tagline">Root Cause Analysis & Fixes</div>
+        <h2 class="slide-title">關鍵問題排查：Cline Socket 中斷錯誤根治</h2>
+        <p class="slide-subtitle">深入剖析 <code>SocketError: other side closed (UND_ERR_SOCKET)</code> 協議成因與代碼級修復方案。</p>
+    </div>
+
+    <div class="grid-2">
+        <div class="card" style="border-left: 4px solid #f43f5e;">
+            <div class="card-header">
+                <span class="card-title">根本成因剖析 (Root Cause)</span>
+                <span class="badge badge-rose">Protocol Conflict</span>
+            </div>
+            <ul>
+                <li><b>客戶端環境</b>：Cline (VS Code 擴充套件) 內部採用 Node.js 的 <code>undici</code> 作為 HTTP Client。</li>
+                <li><b>HTTP/1.1 串流協定衝突</b>：
+                    Gateway 原先發送 SSE 時帶有 <code>Connection: keep-alive</code> 標頭，但<b>未傳送 Content-Length 亦未使用 chunked 分塊編碼</b>。
+                </li>
+                <li><b>EOF 界定失敗</b>：
+                    HTTP/1.1 規定無長度標頭的流必須透過 Server 主動關閉連線（FIN）界定結尾。Gateway 承諾了 keep-alive 卻未主動結束 Socket，導致 undici 在收到 <code>data: [DONE]</code> 後判定連線異常中斷。
+                </li>
+                <li><b>營收資料重複</b>：
+                    原通配符 <code>api_revenue_*.parquet</code> 同時匹配到切檔與全量庫，造成 2026-09 查詢出現雙倍重複。
+                </li>
+            </ul>
+        </div>
+
+        <div class="card" style="border-left: 4px solid #34d399;">
+            <div class="card-header">
+                <span class="card-title">修復成果與實測驗證 (Resolution)</span>
+                <span class="badge badge-green">Production Ready</span>
+            </div>
+            <ul>
+                <li class="green"><b>標頭修正</b>：將 SSE 標頭全面改為 <code>Connection: close</code>，與 TensorFold 核心統一。</li>
+                <li class="green"><b>連線標記</b>：在 <code>data: [DONE]
+
+</code> 輸出後明確設定 <code>self.close_connection = True</code>，發送標準 TCP FIN。</li>
+                <li class="green"><b>異常保護</b>：Socket 寫入包覆 <code>BrokenPipeError</code> 與 <code>ConnectionResetError</code> 容錯。</li>
+                <li class="green"><b>營收防重</b>：改為精確切檔通配符 <code>api_revenue_????-??.parquet</code>，徹底消除重複。</li>
+                <li class="green"><b>9 月營收驗證</b>：確認 16 家提早申報公司（毅嘉、德律、金麗科等）檔案無損健康。</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="slide-footer">
+        <span>RFC 7230 Compliant Streaming Implementation Verified</span>
+        <span class="footer-badge">Slide 5 / 7</span>
+    </div>
+</div>
+
+<!-- SLIDE 6: OPERATIONS -->
+<div class="slide">
+    <div class="glow-cyan"></div>
+    <div class="slide-header">
+        <div class="tagline">Operations & Automation</div>
+        <h2 class="slide-title">服務啟動自動化與維運實踐 (Operations)</h2>
+        <p class="slide-subtitle">針對 <code>start_web.sh</code> 與 <code>stop_web.sh</code> 進行全面強化，確保一鍵重啟 100% 穩定就緒。</p>
+    </div>
+
+    <div class="grid-3">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">啟動腳本強化</span>
+                <span class="badge badge-blue">start_web.sh</span>
+            </div>
+            <p style="margin-bottom:10px; color:#94a3b8;">提升執行穩定性與防呆機制：</p>
+            <ul>
+                <li><b>Docker 權限封裝</b>：建立 <code>run_docker</code> 函式，自動在登入階段缺權限時透過 <code>sg docker</code> 執行。</li>
+                <li><b>殘留 Port 清理</b>：啟動前主動調用 <code>lsof -ti :1234</code> 釋放被佔用之孤兒進程。</li>
+                <li><b>守護程序獨立</b>：使用 <code>setsid + nohup</code>，終端機關閉不影響運行。</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">日常維運指令</span>
+                <span class="badge badge-green">CLI Commands</span>
+            </div>
+            <p style="margin-bottom:10px; color:#94a3b8;">常用標準維運操作：</p>
+            <div class="code-block" style="font-size: 11px;">
+                <span style="color:#64748b;"># 一鍵啟動 / 重啟全部服務</span><br>
+                <span class="code-hl">./start_web.sh</span><br><br>
+                <span style="color:#64748b;"># 停止所有服務 (Gateway + Docker)</span><br>
+                <span class="code-hl">./stop_web.sh</span><br><br>
+                <span style="color:#64748b;"># 查看即時分析日誌</span><br>
+                <span class="code-hl">tail -f gateway.log</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">健康狀態探測</span>
+                <span class="badge badge-purple">Health Checks</span>
+            </div>
+            <p style="margin-bottom:10px; color:#94a3b8;">即時驗證服務可用性：</p>
+            <div class="code-block" style="font-size: 11px;">
+                <span style="color:#64748b;"># 1. 檢測 Gateway 與模型清單</span><br>
+                curl http://127.0.0.1:1234/v1/models<br><br>
+                <span style="color:#64748b;"># 2. 檢測 SearXNG 搜尋引擎</span><br>
+                curl -s http://127.0.0.1:8080/<br><br>
+                <span style="color:#64748b;"># 3. 測試 DuckDB 工具查詢</span><br>
+                curl -X POST http://127.0.0.1:1234/v1/chat/completions ...
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-footer">
+        <span>High-Availability Single-Node Service Orchestration</span>
+        <span class="footer-badge">Slide 6 / 7</span>
+    </div>
+</div>
+
+<!-- SLIDE 7: ROADMAP & SUMMARY -->
+<div class="slide">
+    <div class="glow-purple"></div>
+    <div class="slide-header">
+        <div class="tagline">Summary & Future Outlook</div>
+        <h2 class="slide-title">系統價值總結與後續演進藍圖</h2>
+        <p class="slide-subtitle">打造高精準、超低延遲、具備結構化資料庫理解能力的台股專屬私有化 AI 大腦。</p>
+    </div>
+
+    <div class="grid-2">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">核心價值亮點 (Key Deliverables)</span>
+                <span class="badge badge-green">Completed</span>
+            </div>
+            <ul>
+                <li class="green"><b>全自動量化工具調用</b>：AI 主動判斷籌碼、資券、期貨、營收多維指標並給出策略建議。</li>
+                <li class="green"><b>超高速向量化計算</b>：直接以 DuckDB 讀取 Parquet，無傳統關聯式資料庫匯入負擔。</li>
+                <li class="green"><b>分點中文名稱自關聯</b>：自動匹配 935 筆券商代碼字典，擺脫枯燥數字代碼。</li>
+                <li class="green"><b>全域關閉思考鏈</b>：消除無意義的推理輸出耗損，極致加速對話節奏。</li>
+                <li class="green"><b>協定穩定度提升</b>：徹底解決 Cline 串流 Socket 斷線問題，開箱即用。</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">後續擴充方向 (Future Roadmap)</span>
+                <span class="badge badge-blue">Roadmap</span>
+            </div>
+            <ul>
+                <li><b>全量營收庫自動重構</b>：定期補齊歷史營收全量 Parquet 檔案並提供高速緩存。</li>
+                <li><b>進階主力分點指標庫</b>：在 DuckDB 內建「前 5 大主力買超集中度」、「地緣券商異常交易」預算視圖。</li>
+                <li><b>多模型負載均衡 (Load Balancing)</b>：針對併發需求加入多 GPU 執行個體分配支援。</li>
+                <li><b>通訊軟體即時告警整合</b>：整合盤後自動主力大戶掃描，主動推播至 Line / Telegram。</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="slide-footer">
+        <span>TensorFold + DuckDB Quantitative AI Infrastructure</span>
+        <span class="footer-badge">Slide 7 / 7</span>
+    </div>
+</div>
+
+</body>
+</html>

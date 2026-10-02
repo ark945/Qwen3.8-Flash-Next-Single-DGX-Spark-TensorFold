@@ -34,6 +34,11 @@ case "${1:-}" in
 esac
 for arg in "$@"; do [[ "$arg" == -h || "$arg" == --help ]] && { usage; exit 0; }; done
 
+PORT="${PORT:-1234}"
+SERVED_NAME="${SERVED_NAME:-huihui-qwen3.8-27b-abliterated}"
+API_KEY="${API_KEY:-LM-STUDIO}"
+PARALLEL="${PARALLEL:-3}"
+
 # The serve arguments: scripts/config.sh's defaults first, then the command line's (argparse keeps the last value).
 SERVE_ARGS=(--name "$SERVED_NAME" --parallel "$PARALLEL" --context "$CONTEXT" --kv-dtype "$KV_DTYPE"
             --mtp-drafts "$MTP_DRAFTS" --mtp-confidence "$MTP_CONFIDENCE"
@@ -200,6 +205,7 @@ log "Server answered after $((SECONDS - start))s"
 step 5 "Smoke test: one chat completion"
 SERVED=$(served_name || echo "$SERVED_NAME")
 if smoke=$(curl -s --max-time 120 "$URL/v1/chat/completions" -H 'Content-Type: application/json' \
+             -H "Authorization: Bearer $API_KEY" \
              -d "{\"model\": \"$SERVED\", \"max_tokens\": 64, \"messages\": [{\"role\": \"user\", \"content\": \"Say hi.\"}]}" |
            python3 -c 'import json,sys; r = json.load(sys.stdin); print(r["usage"]["completion_tokens"], "tokens,", r["tensorfold"].get("decode_s"), "s")' 2>/dev/null); then
   log "OK: $smoke"
@@ -211,7 +217,9 @@ IP=$(hostname -I 2>/dev/null | awk '{print $1}')
 [[ "$HOST" == 0.0.0.0 || "$HOST" == "::" ]] || IP="$HOST"
 printf '\n%s  ✔ %s is now LIVE! on port %s%s\n\n' "$G" "$SERVED" "$PORT" "$R"
 cat <<EOF
-    API      http://${IP:-<spark-address>}:$PORT/v1   (model: $SERVED)
+    API      http://${IP:-<spark-address>}:$PORT/v1
+    Model    $SERVED
+    API Key  $API_KEY
     Logs     docker logs -f $CONTAINER_NAME
     Restart  ./start.sh restart
     Stop     ./stop.sh
